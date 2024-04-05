@@ -2,6 +2,14 @@
 
 Proof of Concept (PoC) code/notes exploring using the [spotify/pedalboard](https://github.com/spotify/pedalboard) library for interacting with audio plugin VSTs/etc.
 
+<!-- TOC start (generated with https://derlin.github.io/bitdowntoc/) -->
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+- [See Also](#see-also)
+   - [My Other Related Deepdive Gist's and Projects](#my-other-related-deepdive-gists-and-projects)
+<!-- TOC end -->
+
 ## Prerequisites
 
 - Python 3.7+
