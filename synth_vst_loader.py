@@ -180,13 +180,13 @@ print(f"  Synth plugin is effect? {synth_plugin.is_effect}")
 # print("Synth plugin parameters:")
 # pprint(synth_plugin.parameters)
 
-if args.enumerate_params:
-    print("Capturing initial state of synth params..")
-    initial_synth_params = {key: synth_plugin.parameters[key].raw_value for key in synth_plugin.parameters.keys()}
-
 if args.output_state:
     print("Capturing initial raw state of the synth..")
     initial_synth_raw_state = synth_plugin.raw_state
+
+if args.enumerate_params:
+    print("Capturing initial state of synth params..")
+    initial_synth_params = {key: synth_plugin.parameters[key].raw_value for key in synth_plugin.parameters.keys()}
 
 print("Showing synth GUI..")
 synth_plugin.show_editor()
