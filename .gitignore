@@ -1,6 +1,6 @@
 # Outputs
-synth_raw_state_initial*.bin*
-synth_raw_state_new*.bin*
+synth_raw_state_initial*.*
+synth_raw_state_new*.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

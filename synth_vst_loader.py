@@ -23,7 +23,13 @@ from pedalboard import Pedalboard, load_plugin, VST3Plugin, AudioUnitPlugin
 # from pedalboard.io import AudioFile
 from mido import Message
 
-from helpers import filter_installed_plugins_by_names, compare_plugin_parameters, print_parameter_properties
+from helpers import (
+    filter_installed_plugins_by_names,
+    compare_plugin_parameters,
+    print_parameter_properties,
+    is_vst3_xml,
+    extract_vst3_xml
+)
 
 
 # Setting up argparse
@@ -86,6 +92,18 @@ parser.add_argument(
     help="Filename to save the new raw state. [Default: %(default)s]"
 )
 parser.add_argument(
+    '--out-state-file-initial-xml',
+    type=str,
+    default='synth_raw_state_initial.xml',
+    help="Filename to save the initial raw state XML part. [Default: %(default)s]"
+)
+parser.add_argument(
+    '--out-state-file-new-xml',
+    type=str,
+    default='synth_raw_state_new.xml',
+    help="Filename to save the new raw state XML part. [Default: %(default)s]"
+)
+parser.add_argument(
     '--force',
     type=str2bool,
     nargs='?',
@@ -103,13 +121,22 @@ print()
 
 if args.output_state:
     # Check if the output files already exist. Warn if --force is specified, otherwise raise an error.
-    existing_files = [f for f in [args.out_state_file_initial, args.out_state_file_new] if os.path.exists(f)]
+    existing_files = [
+        f for f in [
+            args.out_state_file_initial,
+            args.out_state_file_initial_xml,
+            args.out_state_file_new,
+            args.out_state_file_new_xml
+        ]
+        if os.path.exists(f)
+    ]
     if existing_files:
         if args.force:
             print(f"Warning: The following files will be overwritten due to --force: {', '.join(existing_files)}")
         else:
             raise FileExistsError(
-                f"The following files already exist: {', '.join(existing_files)}. Use --force to overwrite.")
+                f"The following files already exist: {', '.join(existing_files)}. Use --force to overwrite."
+            )
 
 if args.enumerate_plugins:
     # Filter the locally installed audio plugins by the provided names
@@ -221,6 +248,24 @@ if args.output_state:
     with open(args.out_state_file_new, 'wb') as f:
         f.write(new_synth_raw_state)
         print(f"New raw state written to {args.out_state_file_new}")
+
+    # Check and extract XML from initial state
+    if is_vst3_xml(initial_synth_raw_state):
+        initial_synth_state_xml = extract_vst3_xml(initial_synth_raw_state)
+        with open(args.out_state_file_initial_xml, 'w') as f:
+            f.write(initial_synth_state_xml)
+            print(f"Initial raw state XML written to {args.out_state_file_initial_xml}")
+    else:
+        print("Initial state does not look like VST3 XML.")
+
+    # Check and extract XML from new state
+    if is_vst3_xml(new_synth_raw_state):
+        new_synth_state_xml = extract_vst3_xml(new_synth_raw_state)
+        with open(args.out_state_file_new_xml, 'w') as f:
+            f.write(new_synth_state_xml)
+            print(f"New raw state XML written to {args.out_state_file_new_xml}")
+    else:
+        print("New state does not look like VST3 XML.")
 
 # TODO: see json serialisation for parameters stuff here:
 #   save as json (basic): https://github.com/spotify/pedalboard/issues/187#issuecomment-1375662525
