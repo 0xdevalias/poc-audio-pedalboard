@@ -114,3 +114,42 @@ def print_parameter_properties(parameter):
         except AttributeError as e:
             # If the property does not exist, print an error message
             pprint(f"{property_name}: Property does not exist. Error: {e}")
+
+
+def is_vst3_xml(raw_state):
+    """
+    Check if the raw state looks like VST3 XML.
+
+    This function checks if the 9th to 13th bytes are '<?xml' and the last byte is a null byte (0x00).
+
+    Args:
+      raw_state (bytes): The raw state to check.
+
+    Returns:
+      bool: True if the raw state looks like VST3 XML, False otherwise.
+    """
+    return (
+            len(raw_state) > 13 and
+            raw_state[8:13] == b'<?xml' and
+            raw_state[-1] == 0x00
+    )
+
+
+def extract_vst3_xml(raw_state):
+    """
+    Extract the XML content from the VST3 raw state if it is valid.
+
+    Args:
+      raw_state (bytes): The raw state to extract XML from.
+
+    Returns:
+      str or None: The extracted XML content if valid, otherwise None.
+    """
+    if is_vst3_xml(raw_state):
+        try:
+            # Extract the bytes between the 8-byte header and the null byte
+            xml_part = raw_state[8:-1].decode('utf-8')
+            return xml_part
+        except UnicodeDecodeError:
+            pass
+    return None
