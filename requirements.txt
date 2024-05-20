@@ -1,2 +1,2 @@
-pedalboard
-mido
+pedalboard==0.9.6
+mido==1.3.2
