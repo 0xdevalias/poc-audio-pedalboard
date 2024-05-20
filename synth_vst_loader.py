@@ -48,6 +48,8 @@ parser.add_argument(
 parser.add_argument(
     '--enumerate-plugins',
     type=str2bool,
+    nargs='?',
+    const=True,  # If arg passed with no value, treat it as True
     default=True,
     choices=[True, False],
     help="Enumerate and display synth plugins. [Default: %(default)s]"
@@ -55,6 +57,8 @@ parser.add_argument(
 parser.add_argument(
     '--enumerate-params',
     type=str2bool,
+    nargs='?',
+    const=True,  # If arg passed with no value, treat it as True
     default=True,
     choices=[True, False],
     help="Enumerate and display synth parameters. [Default: %(default)s]"
