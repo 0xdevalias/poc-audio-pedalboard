@@ -12,8 +12,11 @@
 #       A wrapper around various different parameters exposed by VST3Plugin or AudioUnitPlugin instances.
 #       AudioProcessorParameter objects are rarely used directly, and usually used via their implicit interface:
 #         print(my_plugin.parameters.keys())
+#
+# https://docs.python.org/3/library/argparse.html
 
-from pprint import pprint
+import argparse
+from pprint import pprint, pp
 
 from pedalboard import Pedalboard, load_plugin, VST3Plugin, AudioUnitPlugin
 # from pedalboard.io import AudioFile
@@ -21,20 +24,61 @@ from mido import Message
 
 from helpers import filter_installed_plugins_by_names, compare_plugin_parameters, print_parameter_properties
 
-# Filter the locally installed audio plugins by the provided names
-filter_installed_plugins_by_names(
-  ['Vital', 'Serum']
-)
+# Setting up argparse
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
-# eg.
-#   Vital
-#     VST2: /Library/Audio/Plug-Ins/VST/Vital.vst
-#     VST3: /Library/Audio/Plug-Ins/VST3/Vital.vst3
-#     AU:   /Library/Audio/Plug-Ins/Components/Vital.component
-#
-#   Serum
-#     VST2: /Library/Audio/Plug-Ins/VST/Serum.vst
-#     AU:   /Library/Audio/Plug-Ins/Components/Serum.component
+parser = argparse.ArgumentParser(description="Load and compare synth plugins.")
+parser.add_argument(
+  '--synth-path',
+  type=str,
+  default='/Library/Audio/Plug-Ins/VST3/Vital.vst3',
+  # default='/Library/Audio/Plug-Ins/Components/Serum.component',
+  help="Path to the synth plugin file. [Default: %(default)s]",
+)
+parser.add_argument(
+  '--enumerate-plugins',
+  type=str2bool,
+  default=True,
+  choices=[True, False],
+  help="Enumerate and display synth plugins. [Default: %(default)s]"
+)
+parser.add_argument(
+  '--enumerate-params',
+  type=str2bool,
+  default=True,
+  choices=[True, False],
+  help="Enumerate and display synth parameters. [Default: %(default)s]"
+)
+args = parser.parse_args()
+
+print("Args:")
+for key, value in vars(args).items():
+  print(f"  {key}: {value},")
+print()
+
+if args.enumerate_plugins:
+  # Filter the locally installed audio plugins by the provided names
+  filter_installed_plugins_by_names(
+    ['Vital', 'Serum']
+  )
+
+  # eg.
+  #   Vital
+  #     VST2: /Library/Audio/Plug-Ins/VST/Vital.vst
+  #     VST3: /Library/Audio/Plug-Ins/VST3/Vital.vst3
+  #     AU:   /Library/Audio/Plug-Ins/Components/Vital.component
+  #
+  #   Serum
+  #     VST2: /Library/Audio/Plug-Ins/VST/Serum.vst
+  #     AU:   /Library/Audio/Plug-Ins/Components/Serum.component
 
 # Compare the plugin parameters between the VST3 and AudioUnit versions of a plugin, showing the differences and similarities
 # compare_plugin_parameters(
@@ -42,10 +86,11 @@ filter_installed_plugins_by_names(
 #   "/Library/Audio/Plug-Ins/Components/Vital.component"
 # )
 
-print("Loading synth plugin..")
+print(f"Loading synth plugin ({args.synth_path})..")
+synth_plugin = load_plugin(args.synth_path)
 
 # synth_plugin = load_plugin("/Library/Audio/Plug-Ins/VST3/Vital.vst3")
-synth_plugin = load_plugin("/Library/Audio/Plug-Ins/Components/Serum.component")
+# synth_plugin = load_plugin("/Library/Audio/Plug-Ins/Components/Serum.component")
 
 print(f"Synth plugin loaded: {synth_plugin.name}")
 
@@ -66,29 +111,40 @@ print(f"Synth plugin is effect? {synth_plugin.is_effect}")
 # print("Synth plugin parameters:")
 # pprint(synth_plugin.parameters)
 
-print("Capturing initial state of synth params..")
-initial_synth_params = {key: synth_plugin.parameters[key].raw_value for key in synth_plugin.parameters.keys()}
+if args.enumerate_params:
+  print("Capturing initial state of synth params..")
+  initial_synth_params = {key: synth_plugin.parameters[key].raw_value for key in synth_plugin.parameters.keys()}
 
 print("Showing synth GUI..")
 synth_plugin.show_editor()
 
-print("Capturing state of synth params after showing GUI..")
-new_synth_params = {key: synth_plugin.parameters[key].raw_value for key in synth_plugin.parameters.keys()}
+if args.enumerate_params:
+  print("Capturing state of synth params after showing GUI..")
+  new_synth_params = {key: synth_plugin.parameters[key].raw_value for key in synth_plugin.parameters.keys()}
 
-# Calculate the differences
-synth_param_diffs = {
-  key: {'before': initial_synth_params[key], 'after': new_synth_params[key]}
-  for key in initial_synth_params
-  if initial_synth_params[key] != new_synth_params[key]
-}
+  # Calculate the differences
+  synth_param_diffs = {
+    key: {'before': initial_synth_params[key], 'after': new_synth_params[key]}
+    for key in initial_synth_params
+    if key in new_synth_params and initial_synth_params[key] != new_synth_params[key]
+  }
 
-# Print out the differences
-print(f"Number of parameters before: {len(initial_synth_params)}")
-print(f"Number of parameters after: {len(new_synth_params)}")
-print(f"Number of parameters changed: {len(synth_param_diffs)}")
-for key, value in synth_param_diffs.items():
-    print(f"Parameter: {key} ({synth_plugin.parameters[key].name}), Before: {value['before']}, After: {value['after']}")
+  # Check for keys that exist only in one of the dictionaries
+  missing_in_new = {key for key in initial_synth_params if key not in new_synth_params}
+  missing_in_initial = {key for key in new_synth_params if key not in initial_synth_params}
 
+  # Output warnings for missing keys
+  if missing_in_new:
+    print("Warning: These keys were in the initial parameters, but are missing in the new parameters:", missing_in_new)
+  if missing_in_initial:
+    print("Warning: These keys were not in the initial parameters, but are in the new parameters:", missing_in_initial)
+
+  # Print out the differences
+  print(f"Number of parameters before: {len(initial_synth_params)}")
+  print(f"Number of parameters after: {len(new_synth_params)}")
+  print(f"Number of parameters changed: {len(synth_param_diffs)}")
+  for key, value in synth_param_diffs.items():
+      print(f"Parameter: {key} ({synth_plugin.parameters[key].name}), Before: {value['before']}, After: {value['after']}")
 
 # TODO: see json serialisation for parameters stuff here:
 #   save as json (basic): https://github.com/spotify/pedalboard/issues/187#issuecomment-1375662525
