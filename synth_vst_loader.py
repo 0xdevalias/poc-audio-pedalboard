@@ -162,14 +162,9 @@ if args.enumerate_plugins:
 
 print(f"Loading synth plugin ({args.synth_path})..")
 synth_plugin = load_plugin(args.synth_path)
-
-# synth_plugin = load_plugin("/Library/Audio/Plug-Ins/VST3/Vital.vst3")
-# synth_plugin = load_plugin("/Library/Audio/Plug-Ins/Components/Serum.component")
-
-print(f"Synth plugin loaded: {synth_plugin.name}")
-
-print(f"Synth plugin is instrument? {synth_plugin.is_instrument}")
-print(f"Synth plugin is effect? {synth_plugin.is_effect}")
+print(f"  Synth plugin loaded: {synth_plugin.name}")
+print(f"  Synth plugin is instrument? {synth_plugin.is_instrument}")
+print(f"  Synth plugin is effect? {synth_plugin.is_effect}")
 # assert synth_plugin.is_instrument
 
 # # TODO: remove this hacky code
