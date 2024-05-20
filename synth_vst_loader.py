@@ -66,7 +66,7 @@ parser.add_argument(
     type=str2bool,
     nargs='?',
     const=True,  # If arg passed with no value, treat it as True
-    default=True,
+    default=False,
     choices=[True, False],
     help="Enumerate and display synth parameters. [Default: %(default)s]"
 )
