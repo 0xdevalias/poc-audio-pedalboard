@@ -2,10 +2,12 @@ from pprint import pprint, pformat
 
 from pedalboard import load_plugin, VST3Plugin, AudioUnitPlugin
 
+
 def pprint_with_indent(data, indent=4):
     output = pformat(data)
     indented_output = (' ' * indent) + ('\n' + ' ' * indent).join(output.splitlines())
     print(indented_output)
+
 
 # Filter the locally installed audio plugins by the provided names
 #
@@ -27,13 +29,14 @@ def filter_installed_plugins_by_names(filters):
         if any(plugin_name in plugin_path.lower() for plugin_name in plugins_filter)
     ]
 
-    print(  f"Plugin filters: {filters}")
+    print(f"Plugin filters: {filters}")
 
     print("  Filtered VST3 Plugins:")
     pprint_with_indent(filtered_vst3_plugins, indent=4)
 
     print("  Filtered AudioUnit Plugins:")
     pprint_with_indent(filtered_au_plugins, indent=4)
+
 
 # Compare the plugin parameters between the VST3 and AudioUnit versions of a plugin, showing the differences and similarities
 #
@@ -62,6 +65,7 @@ def compare_plugin_parameters(vst3_path, au_path):
     print("  Parameters only in VST3:", only_in_vst3)
     print("  Parameters only in AU:", only_in_au)
     print("  Parameters in both:", in_both)
+
 
 # Example usage:
 # Assuming synth_plugin.parameters['verb_wet'] is your parameter:
@@ -110,4 +114,3 @@ def print_parameter_properties(parameter):
         except AttributeError as e:
             # If the property does not exist, print an error message
             pprint(f"{property_name}: Property does not exist. Error: {e}")
-
