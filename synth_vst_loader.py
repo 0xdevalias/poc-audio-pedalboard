@@ -16,6 +16,7 @@
 # https://docs.python.org/3/library/argparse.html
 
 import argparse
+import os
 from pprint import pprint, pp
 
 from pedalboard import Pedalboard, load_plugin, VST3Plugin, AudioUnitPlugin
@@ -63,12 +64,52 @@ parser.add_argument(
     choices=[True, False],
     help="Enumerate and display synth parameters. [Default: %(default)s]"
 )
+parser.add_argument(
+    '--output-state',
+    type=str2bool,
+    nargs='?',
+    const=True,  # If arg passed with no value, treat it as True
+    default=False,
+    choices=[True, False],
+    help="Output the state of the synth. [Default: %(default)s]"
+)
+parser.add_argument(
+    '--out-state-file-initial',
+    type=str,
+    default='synth_raw_state_initial.bin',
+    help="Filename to save the initial raw state. [Default: %(default)s]"
+)
+parser.add_argument(
+    '--out-state-file-new',
+    type=str,
+    default='synth_raw_state_new.bin',
+    help="Filename to save the new raw state. [Default: %(default)s]"
+)
+parser.add_argument(
+    '--force',
+    type=str2bool,
+    nargs='?',
+    const=True,  # If arg passed with no value, treat it as True
+    default=False,
+    choices=[True, False],
+    help="Force overwrite of existing files. [Default: %(default)s]"
+)
 args = parser.parse_args()
 
 print("Args:")
 for key, value in vars(args).items():
     print(f"  {key}: {value},")
 print()
+
+if args.output_state:
+    # Check if the output files already exist. Warn if --force is specified, otherwise raise an error.
+    existing_files = [f for f in [args.out_state_file_initial, args.out_state_file_new] if os.path.exists(f)]
+    if existing_files:
+        if args.force:
+            print(f"Warning: The following files will be overwritten due to --force: {', '.join(existing_files)}")
+        else:
+            raise FileExistsError(
+                f"The following files already exist: {', '.join(existing_files)}. Use --force to overwrite.")
 
 if args.enumerate_plugins:
     # Filter the locally installed audio plugins by the provided names
@@ -121,6 +162,10 @@ if args.enumerate_params:
     print("Capturing initial state of synth params..")
     initial_synth_params = {key: synth_plugin.parameters[key].raw_value for key in synth_plugin.parameters.keys()}
 
+if args.output_state:
+    print("Capturing initial raw state of the synth..")
+    initial_synth_raw_state = synth_plugin.raw_state
+
 print("Showing synth GUI..")
 synth_plugin.show_editor()
 
@@ -158,6 +203,24 @@ if args.enumerate_params:
     for key, value in synth_param_diffs.items():
         print(
             f"Parameter: {key} ({synth_plugin.parameters[key].name}), Before: {value['before']}, After: {value['after']}")
+
+if args.output_state:
+    print("Capturing new raw state of the synth after showing GUI..")
+    new_synth_raw_state = synth_plugin.raw_state
+
+    # Output details about the raw synth state
+    print(f"Raw synth state length before: {len(initial_synth_raw_state)}")
+    print(f"Raw synth state length after: {len(new_synth_raw_state)}")
+    # TODO: calculate the diff between initial_synth_raw_state and new_synth_raw_state?
+
+    # Write the initial and new raw states to files
+    with open(args.out_state_file_initial, 'wb') as f:
+        f.write(initial_synth_raw_state)
+        print(f"Initial raw state written to {args.out_state_file_initial}")
+
+    with open(args.out_state_file_new, 'wb') as f:
+        f.write(new_synth_raw_state)
+        print(f"New raw state written to {args.out_state_file_new}")
 
 # TODO: see json serialisation for parameters stuff here:
 #   save as json (basic): https://github.com/spotify/pedalboard/issues/187#issuecomment-1375662525
